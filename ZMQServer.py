@@ -1,5 +1,6 @@
 import time
 import zmq
+import cv2
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)

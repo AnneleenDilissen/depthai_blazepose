@@ -65,6 +65,8 @@ def main():
 
     device_infos = dai.Device.getAllAvailableDevices()
 
+    print(len(device_infos))
+
     save_video = config['DEFAULT']['save_video']
     save_landmarks = config['DEFAULT']['save_landmarks']
     landmark_model = config['DEFAULT']['landmark_model']
