@@ -76,7 +76,12 @@ class BlazeposeDepthai:
                  internal_frame_height=720,
                  trace=False,
                  force_detection=False,
-                 device_info=None):
+                 device_info=None,
+                 manualfocus=True,
+                 manualfocusvalue=0,
+                 manualexposure=True,
+                 manualexposurevalue=0
+                 ):
 
         self.pd_model = pd_model if pd_model else POSE_DETECTION_MODEL
         self.pp_model = pp_model if pd_model else DETECTION_POSTPROCESSING_MODEL
@@ -104,6 +109,11 @@ class BlazeposeDepthai:
 
         self.trace = trace
         self.force_detection = force_detection
+
+        self.manualfocus = manualfocus
+        self.manualfocusvalue = manualfocusvalue
+        self.manualexposure = manualexposure
+        self.manualexposurevalue = manualexposurevalue
 
         openvino_version = dai.OpenVINO.Version.VERSION_2021_4
 
@@ -222,6 +232,17 @@ class BlazeposeDepthai:
         cam.setIspScale(self.scale_nd[0], self.scale_nd[1])
         cam.setFps(self.internal_fps)
         cam.setBoardSocket(dai.CameraBoardSocket.RGB)
+
+        if self.manualfocus == True:
+            cam.initialControl.setManualFocus(self.manualfocusvalue)
+        else:
+            cam.initialControl.setAutoFocusMode()
+
+        if self.manualexposure == True:
+            cam.initialControl.setManualExposure(self.manualexposurevalue)
+        else:
+            cam.initialControl.setAutoExposureEnable()
+
 
         if self.crop:
             cam.setVideoSize(self.frame_size, self.frame_size)

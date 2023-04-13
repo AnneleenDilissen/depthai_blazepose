@@ -70,6 +70,14 @@ def main():
     save_video = config['DEFAULT']['save_video']
     save_landmarks = config['DEFAULT']['save_landmarks']
     landmark_model = config['DEFAULT']['landmark_model']
+    manualfocus = config['DEFAULT']['manualfocus']
+    manualfocusvalue = config['DEFAULT']['manualfocusvalue']
+    manualexposure = config['DEFAULT']['manualexposure']
+    manualexposurevalue = config['DEFAULT']['manualexposurevalue']
+
+    print(save_video)
+    print(save_landmarks)
+
 
     args = argument_parser()
 
@@ -86,7 +94,12 @@ def main():
                                                   internal_frame_height=args.internal_frame_height,
                                                   force_detection=args.force_detection,
                                                   stats=True,
-                                                  trace=args.trace)
+                                                  trace=args.trace,
+                                                  manualfocus=manualfocus,
+                                                  manualfocusvalue=manualfocusvalue,
+                                                  manualexposure=manualexposure,
+                                                  manualexposurevalue=manualexposurevalue
+                                                  )
 
         path = 'results'
         isExist = os.path.exists(path)
@@ -95,7 +108,8 @@ def main():
 
         timestr = time.strftime("%Y%m%d-%H%M%S")
 
-        if save_landmarks:
+        if save_landmarks == True:
+            print("here")
             temp_f = f"f_{i}"
             landmarkFName = path + os.path.sep + timestr + f"_camera_{i}" + '.csv'
             landmarkLineFName = path + os.path.sep + timestr + f"_camera_{i}" + '_land_mark_line.csv'
@@ -113,7 +127,7 @@ def main():
 
             globals()[temp_f].write(header + "\n")
 
-        if save_video:
+        if save_video == True:
             videoFName = path + os.path.sep + timestr + f"_camera_{i}" + '.avi'
         else:
             videoFName = None
@@ -157,7 +171,7 @@ def main():
             key = globals()[f"renderer_{i}"].waitKey(delay=1)
             globals()[f"renderer_{i}"].setElapsedTime(elapsedTime)
 
-            if save_landmarks:
+            if save_landmarks == True:
                 if not (globals()[temp_body] is None):
                     right_arm_angle = angle_with_y(
                         globals()[temp_body].landmarks[KEYPOINT_DICT['right_elbow'], :2] - globals()[temp_body].landmarks[KEYPOINT_DICT['right_shoulder'], :2])
@@ -185,7 +199,7 @@ def main():
         globals()[f"renderer_{i}"].exit()
         globals()[f"tracker_{i}"].exit()
 
-        if save_landmarks:
+        if save_landmarks == True:
             globals()[temp_f].close()
 
 if __name__ == "__main__":
