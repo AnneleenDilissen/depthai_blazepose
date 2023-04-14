@@ -1,85 +1,104 @@
 import cv2
 import zmq
 import base64
-import cv2
 import depthai
 import time
+from BlazeposeDepthaiEdge import BlazeposeDepthai
+from pathlib import Path
+import os
+from datetime import datetime, timedelta
+import mediapipe_utils
+from mediapipe_utils import KEYPOINT_DICT
+from Anneleen_test_renderer import Anneleen_test_renderer
+from math import atan2, degrees
+import argparse
 
 context = zmq.Context()
 footage_socket = context.socket(zmq.PUB)
-footage_socket.connect('tcp://localhost:5555')
+footage_socket.connect('tcp://192.168.0.149:5555')
 
-# camera = cv2.VideoCapture(0)  # init the camera
-#
-# if not camera.isOpened():
-#     raise IOError("Cannot open webcam")
-#
-# while True:
-#     try:
-#         (grabbed, frame) = camera.read()  # grab the current frame
-#         frame = cv2.resize(frame, (640, 480))  # resize the frame
-#         encoded, buffer = cv2.imencode('.jpg', frame)
-#         footage_socket.send(base64.b64encode(buffer), zmq.NOBLOCK)
-#
-#     except KeyboardInterrupt:
-#         camera.release()
-#         cv2.destroyAllWindows()
-#         print("\n\nBye bye\n")
-#         break
+parser = argparse.ArgumentParser()
+parser.add_argument('-e', '--edge', action="store_true",
+                    help="Use Edge mode (postprocessing runs on the device)")
+parser_tracker = parser.add_argument_group("Tracker arguments")
+parser_tracker.add_argument('-i', '--input', type=str, default="rgb",
+                            help="'rgb' or 'rgb_laconic' or path to video/image file to use as input (default=%(default)s)")
+parser_tracker.add_argument("--pd_m", type=str,
+                            help="Path to an .blob file for pose detection model")
+parser_tracker.add_argument("--lm_m", type=str,
+                            help="Landmark model ('full' or 'lite' or 'heavy') or path to an .blob file")
+parser_tracker.add_argument('-xyz', '--xyz', action="store_true",
+                            help="Get (x,y,z) coords of reference body keypoint in camera coord system (only for compatible devices)")
+parser_tracker.add_argument('-c', '--crop', action="store_true",
+                            help="Center crop frames to a square shape before feeding pose detection model")
+parser_tracker.add_argument('--no_smoothing', action="store_true",
+                            help="Disable smoothing filter")
+parser_tracker.add_argument('-f', '--internal_fps', type=int,
+                            help="Fps of internal color camera. Too high value lower NN fps (default= depends on the model)")
+parser_tracker.add_argument('--internal_frame_height', type=int, default=640,
+                            help="Internal color camera frame height in pixels (default=%(default)i)")
+parser_tracker.add_argument('-s', '--stats', action="store_true",
+                            help="Print some statistics at exit")
+parser_tracker.add_argument('-t', '--trace', action="store_true",
+                            help="Print some debug messages")
+parser_tracker.add_argument('--force_detection', action="store_true",
+                            help="Force person detection on every frame (never use landmarks from previous frame to determine ROI)")
 
-# create a DepthAI pipeline
-pipeline = depthai.Pipeline()
+parser_renderer = parser.add_argument_group("Renderer arguments")
+parser_renderer.add_argument('-3', '--show_3d', choices=[None, "image", "world", "mixed"], default=None,
+                             help="Display skeleton in 3d in a separate window. See README for description.")
+parser_renderer.add_argument("-o", "--output",
+                             help="Path to output video file")
 
-# create a node that receives the video feed from the camera
-cam_node = pipeline.createColorCamera()
-cam_node.setPreviewSize(640, 480)
-cam_node.setFps(30)
+args = parser.parse_args()
 
-# create a node that displays the video feed
-display_node = pipeline.createXLinkOut()
-display_node.setStreamName("display")
+tracker = BlazeposeDepthai(input_src=args.input,
+                           pd_model=args.pd_m,
+                           lm_model="lite",
+                           smoothing=not args.no_smoothing,
+                           xyz=args.xyz,
+                           crop=args.crop,
+                           internal_fps=25,
+                           internal_frame_height=args.internal_frame_height,
+                           force_detection=args.force_detection,
+                           stats=True,
+                           trace=args.trace,
+                           manualfocus=False,
+                           manualfocusvalue=0,
+                           manualexposure=False,
+                           manualexposurevalue=0
+                           )
 
-# link the camera node to the display node
-cam_node.preview.link(display_node.input)
+renderer = Anneleen_test_renderer(tracker)
 
-# start the pipeline
-with depthai.Device(pipeline, usb2Mode=True) as device:
-    # create a window to display the video
-    # cv2.namedWindow("video", cv2.WINDOW_NORMAL)
-    # cv2.resizeWindow("video", 640, 480)
+renderer.turnOnLandMarks()
 
-    # initialize some variables for FPS calculation
-    fps = 0
-    frame_count = 0
-    start_time = time.monotonic()
+startTime = time.time()
 
-    while True:
-        # get the next frame from the video feed
-        in_frame = device.getOutputQueue("display").get()
+frame_count = 0
 
-        # convert the frame to a numpy array
-        frame = in_frame.getCvFrame()
+while True:
 
-        # # calculate FPS
-        # frame_count += 1
-        # elapsed_time = time.monotonic() - start_time
-        # if elapsed_time > 1.0:
-        #     fps = frame_count / elapsed_time
-        #     frame_count = 0
-        #     start_time = time.monotonic()
+    # calculate frame count
+    frame_count += 1
 
-        # display FPS in the video window
-        # cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    elapsedTime = round(time.time() - startTime, 2)
 
-        # display the frame
-        # cv2.imshow("video", frame)
+    # Run blazepose on next frame
+    frame, body = tracker.next_frame()
+    cv2.putText(frame, f"frame: {frame_count}", (680, 30), cv2.FONT_HERSHEY_SIMPLEX, 1,(0, 0, 255), 2)
+    if frame is None:
+        break
 
-        encoded, buffer = cv2.imencode('.jpg', frame)
-        footage_socket.send(base64.b64encode(buffer), zmq.NOBLOCK)
+    frame = renderer.draw(frame, body)
+    key = renderer.waitKey(delay=1)
+    renderer.setElapsedTime(elapsedTime)
 
-        # wait for key press to exit
-        if cv2.waitKey(1) == ord("q"):
-            break
+    encoded, buffer = cv2.imencode('.jpg', frame)
+    footage_socket.send(base64.b64encode(buffer), zmq.NOBLOCK)
 
-    # release resources
-    cv2.destroyAllWindows()
+    if cv2.waitKey(1) == ord('q'):
+        break
+
+renderer.exit()
+tracker.exit()

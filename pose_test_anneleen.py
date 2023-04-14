@@ -77,7 +77,13 @@ tracker = BlazeposeDepthai(input_src=args.input,
                            internal_frame_height=args.internal_frame_height,
                            force_detection=args.force_detection,
                            stats=True,
-                           trace=args.trace)
+                           trace=args.trace,
+                           manualfocus=False,
+                           manualfocusvalue=0,
+                           manualexposure=False,
+                           manualexposurevalue=0
+                           )
+
 
 
 # path = 'results'

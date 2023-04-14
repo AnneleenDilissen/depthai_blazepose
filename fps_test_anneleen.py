@@ -1,6 +1,14 @@
 import cv2
 import depthai
 import time
+import zmq
+
+context = zmq.Context()
+
+#  Socket to talk to server
+print("Connecting to test server…")
+socket = context.socket(zmq.REQ)
+socket.connect("tcp://192.168.0.149:5555")
 
 # create a DepthAI pipeline
 pipeline = depthai.Pipeline()
@@ -51,6 +59,12 @@ with depthai.Device(pipeline, usb2Mode=True) as device:
 
         # display the frame
         cv2.imshow("video", frame)
+
+        socket.send(frame)
+
+        #  Get the reply.
+        message = socket.recv()
+        print("Received reply %s [ %s ]" % message)
 
         # wait for key press to exit
         if cv2.waitKey(1) == ord("q"):
