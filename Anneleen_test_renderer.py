@@ -22,7 +22,7 @@ COLORS_BODY = [rgb[x] for x in COLORS_BODY]
 class Anneleen_test_renderer:
     def __init__(self,
                  tracker,
-                 output=None, number=0):
+                 output=None, number=0, show=False):
         self.tracker = tracker
         self.fram = None
         self.pause = False
@@ -36,6 +36,8 @@ class Anneleen_test_renderer:
         self.show_fps = True
 
         self.show_xyz_zone = self.show_xyz = self.tracker.xyz
+
+        self.show = show
 
         if output is None:
             self.output = None
@@ -135,7 +137,8 @@ class Anneleen_test_renderer:
     def waitKey(self, delay=1):
         if self.show_fps:
             self.tracker.fps.draw(self.frame, orig=(50, 50), size=1, color=(240, 180, 100))
-        cv2.imshow(f"Blazepose_{self.number}", self.frame)
+        if self.show:
+            cv2.imshow(f"Blazepose_{self.number}", self.frame)
         if self.output:
             self.output.write(self.frame)
         key = cv2.waitKey(delay)

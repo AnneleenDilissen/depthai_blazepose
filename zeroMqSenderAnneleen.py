@@ -1,3 +1,5 @@
+#!/bin/bash
+import sys
 import cv2
 import zmq
 import base64
@@ -13,9 +15,13 @@ from Anneleen_test_renderer import Anneleen_test_renderer
 from math import atan2, degrees
 import argparse
 
+sys.path.append('/home/pi/Desktop/depthai_blazepose')
+
 context = zmq.Context()
 footage_socket = context.socket(zmq.PUB)
-footage_socket.connect('tcp://192.168.0.149:5555')
+footage_socket.connect('tcp://192.168.0.120:5555')     #ip adress laptop thuis
+#footage_socket.connect('tcp://10.42.0.18:5555')    #ip adress laptop raspi netwerk
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--edge', action="store_true",
@@ -69,7 +75,7 @@ tracker = BlazeposeDepthai(input_src=args.input,
                            manualexposurevalue=0
                            )
 
-renderer = Anneleen_test_renderer(tracker)
+renderer = Anneleen_test_renderer(tracker,show=False)
 
 renderer.turnOnLandMarks()
 
