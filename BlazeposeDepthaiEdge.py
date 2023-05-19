@@ -75,10 +75,11 @@ class BlazeposeDepthai:
                  internal_frame_height=1080,
                  trace=False,
                  force_detection=False,
-                 manualfocus=True,
-                 manualfocusvalue=0,
-                 manualexposure=True,
-                 manualexposurevalue=0
+                 manualfocus="no",
+                 manualfocusvalue=100,
+                 manualexposure="no",
+                 manualexposuretime=10,
+                 manualexposurevalue=200
                  ):
 
         self.pd_model = pd_model if pd_model else POSE_DETECTION_MODEL
@@ -114,6 +115,7 @@ class BlazeposeDepthai:
         self.manualfocusvalue = manualfocusvalue
         self.manualexposure = manualexposure
         self.manualexposurevalue = manualexposurevalue
+        self.manualexposuretime = manualexposuretime
 
         self.xyz = False
 
@@ -228,15 +230,16 @@ class BlazeposeDepthai:
         cam.setFps(self.internal_fps)
         cam.setBoardSocket(dai.CameraBoardSocket.RGB)
 
-        if self.manualfocus == True:
-            cam.initialControl.setManualFocus(self.manualfocusvalue)
-        # else:
-        #     cam.initialControl.setAutoFocusMode(dai.RawCameraControl.autoFocusMode)
+        if self.manualfocus == "yes":
+            cam.initialControl.setManualFocus(int(self.manualfocusvalue))
+            print("IN MANUAL FOCUS")
 
-        if self.manualexposure == True:
-            cam.initialControl.setManualExposure(self.manualexposurevalue)
+        if self.manualexposure == "yes":
+            cam.initialControl.setManualExposure(int(self.manualexposuretime), int(self.manualexposurevalue))
+            print("IN MANUAL exposure")
         else:
             cam.initialControl.setAutoExposureEnable()
+            print("IN NO MANUAL exposure")
 
         if self.crop:
             cam.setVideoSize(self.frame_size, self.frame_size)

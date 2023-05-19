@@ -74,6 +74,7 @@ def main():
     manualfocusvalue = config['DEFAULT']['manualfocusvalue']
     manualexposure = config['DEFAULT']['manualexposure']
     manualexposurevalue = config['DEFAULT']['manualexposurevalue']
+    manualexposuretime = config['DEFAULT']['manualexposuretime']
 
     print(save_video)
     print(save_landmarks)
@@ -98,6 +99,7 @@ def main():
                                                   manualfocus=manualfocus,
                                                   manualfocusvalue=manualfocusvalue,
                                                   manualexposure=manualexposure,
+                                                  manualexposuretime=manualexposuretime,
                                                   manualexposurevalue=manualexposurevalue
                                                   )
 
@@ -108,8 +110,7 @@ def main():
 
         timestr = time.strftime("%Y%m%d-%H%M%S")
 
-        if save_landmarks == True:
-            print("here")
+        if save_landmarks == "yes":
             temp_f = f"f_{i}"
             landmarkFName = path + os.path.sep + timestr + f"_camera_{i}" + '.csv'
             landmarkLineFName = path + os.path.sep + timestr + f"_camera_{i}" + '_land_mark_line.csv'
@@ -127,7 +128,7 @@ def main():
 
             globals()[temp_f].write(header + "\n")
 
-        if save_video == True:
+        if save_video == "yes":
             videoFName = path + os.path.sep + timestr + f"_camera_{i}" + '.avi'
         else:
             videoFName = None
@@ -171,7 +172,7 @@ def main():
             key = globals()[f"renderer_{i}"].waitKey(delay=1)
             globals()[f"renderer_{i}"].setElapsedTime(elapsedTime)
 
-            if save_landmarks == True:
+            if save_landmarks == "yes":
                 if not (globals()[temp_body] is None):
                     right_arm_angle = angle_with_y(
                         globals()[temp_body].landmarks[KEYPOINT_DICT['right_elbow'], :2] - globals()[temp_body].landmarks[KEYPOINT_DICT['right_shoulder'], :2])
@@ -199,7 +200,7 @@ def main():
         globals()[f"renderer_{i}"].exit()
         globals()[f"tracker_{i}"].exit()
 
-        if save_landmarks == True:
+        if save_landmarks == "yes":
             globals()[temp_f].close()
 
 if __name__ == "__main__":

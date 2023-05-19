@@ -164,7 +164,7 @@ while True:
     # f_line.flush()
     # os.fsync(f)
 
-        #client_socket.send(lineToWrite.encode())
+
 
     if cv2.waitKey(1) == ord('q'):
         break

@@ -5,22 +5,24 @@ import cv2
 pipeline = depthai.Pipeline()
 
 cam_rgb = pipeline.createColorCamera()
-cam_rgb.setPreviewSize(300, 300)
+cam_rgb.setPreviewSize(320, 200)
 cam_rgb.setInterleaved(False)
 cam_rgb.setBoardSocket(depthai.CameraBoardSocket.RGB)
 cam_rgb.setFps(30)
 
-video_encoder = pipeline.createVideoEncoder()
-video_encoder.setDefaultProfilePreset(cam_rgb.getFps(), depthai.VideoEncoderProperties.Profile.H264_BASELINE)
-video_encoder.setFrameRate(30)
+# video_encoder = pipeline.createVideoEncoder()
+# video_encoder.setDefaultProfilePreset(cam_rgb.getFps(), depthai.VideoEncoderProperties.Profile.MJPEG)
+# video_encoder.setFrameRate(30)
 
 # create an XLinkOut node for the video encoder output and set its stream name
 video_out = pipeline.createXLinkOut()
 video_out.setStreamName("video")
 
 # link the video encoder output to the video_out node
-cam_rgb.preview.link(video_encoder.input)
-video_encoder.bitstream.link(video_out.input)
+# cam_rgb.preview.link(video_encoder.input)
+# video_encoder.bitstream.link(video_out.input)
+
+cam_rgb.preview.link(video_out.input)
 
 # create and start the device
 device = depthai.Device(pipeline)
@@ -37,7 +39,8 @@ with open("output.mp4", "wb") as f:
         print("2")
         if packet is not None:
             # write the packet data to the file
-            f.write(packet.getRaw())
+            f.write(packet)
+            print(packet)
 
         # calculate the FPS and print it
         elapsed_time = time.monotonic() - start_time
